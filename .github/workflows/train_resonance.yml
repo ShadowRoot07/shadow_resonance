@@ -1,0 +1,68 @@
+name: Shadow Resonance Training & Auto-Commit
+
+on:
+  push:
+    branches: [ main ]
+  # Permite ejecutarlo manualmente desde la pestaña Actions si es necesario
+  workflow_dispatch:
+
+jobs:
+  build-and-train:
+    runs-on: ubuntu-latest
+    # CRITICO: Permisos para que el bot pueda subir el modelo al repo
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev libjack-dev
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tensorflow numpy pretty_midi librosa pydantic fastapi
+
+    - name: Create Model Directory
+      run: mkdir -p app/models/saved
+
+    - name: Run Composer Training
+      run: |
+        # Ejecutamos tu script principal
+        python scripts/train_composer.py
+
+    - name: Commit and Push Model
+      run: |
+        # Configuración del bot de Git
+        git config --global user.name "Shadow-Resonance-Bot"
+        git config --global user.email "shadow-bot@users.noreply.github.com"
+        
+        # Intentamos añadir el archivo generado
+        # Nota: Asegúrate de que tu script use este nombre exacto
+        git add app/models/saved/shadow_composer.keras
+        
+        # Verificamos si hay algo nuevo para subir
+        if git diff --staged --quiet; then
+          echo "No se detectaron cambios en el modelo. Saltando push."
+        else
+          git commit -m "🤖 [Automated] Update Shadow-Resonance Model weights"
+          git push
+        fi
+
+    - name: Upload Artifact (Backup)
+      uses: actions/upload-artifact@v4
+      with:
+        name: shadow-resonance-model-artifact
+        path: app/models/saved/shadow_composer.keras
+
