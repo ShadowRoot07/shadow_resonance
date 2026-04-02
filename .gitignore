@@ -11,11 +11,11 @@ app/models/saved/*.tflite
 app/models/saved/*.h5
 
 # Datos y Audio
-data/raw/*
-data/processed/*
-*.mid
-*.mp3
-*.wav
+#data/raw/*
+#data/processed/*
+#*.mid
+#*.mp3
+#*.wav
 
 # IDEs
 .vscode/
