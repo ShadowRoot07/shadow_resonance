@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+tensorflow
+numpy
+librosa
+pretty_midi
+pydantic
+python-multipart
+
