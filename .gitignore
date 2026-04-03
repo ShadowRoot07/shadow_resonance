@@ -7,8 +7,8 @@ venv/
 
 # Modelos y Pesos (No subir archivos .keras gigantes si no es necesario)
 *.keras
-#app/models/saved/*.tflite
-#app/models/saved/*.h5
+*.tflite
+*.h5
 
 # Datos y Audio
 <<<<<<< HEAD
