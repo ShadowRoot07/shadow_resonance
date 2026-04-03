@@ -6,7 +6,7 @@ venv/
 .env
 
 # Modelos y Pesos (No subir archivos .keras gigantes si no es necesario)
-app/models/saved/*.keras
+#app/models/saved/*.keras
 #app/models/saved/*.tflite
 #app/models/saved/*.h5
 
