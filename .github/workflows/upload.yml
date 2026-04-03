@@ -1,0 +1,30 @@
+name: Upload Model to Hugging Face
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/models/saved/shadow_composer.keras' # Solo se ejecuta si el modelo cambia
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          pip install huggingface_hub
+
+      - name: Ejecutar script de subida
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python upload_model.py
+
