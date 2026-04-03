@@ -6,7 +6,7 @@ venv/
 .env
 
 # Modelos y Pesos (No subir archivos .keras gigantes si no es necesario)
-*.keras
+#*.keras
 *.tflite
 *.h5
 
@@ -17,13 +17,13 @@ data/processed/*
 *.mid
 *.mp3
 *.wav
-=======
+#=======
 data/raw/*
 data/processed/*
 *.mid
 *.mp3
 *.wav
->>>>>>> 71a694dda8187d91360b2f429cb6857990038330
+#>>>>>>> 71a694dda8187d91360b2f429cb6857990038330
 
 # IDEs
 .vscode/
