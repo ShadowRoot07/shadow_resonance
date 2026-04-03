@@ -11,11 +11,19 @@ venv/
 #app/models/saved/*.h5
 
 # Datos y Audio
+<<<<<<< HEAD
 data/raw/*
 data/processed/*
 *.mid
 *.mp3
 *.wav
+=======
+#data/raw/*
+#data/processed/*
+#*.mid
+#*.mp3
+#*.wav
+>>>>>>> 71a694dda8187d91360b2f429cb6857990038330
 
 # IDEs
 .vscode/

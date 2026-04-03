@@ -1,9 +1,17 @@
 fastapi
+<<<<<<< HEAD
 uvicorn
 tensorflow-cpu
 numpy
 pretty_midi
 librosa
+=======
+uvicorn[standard]
+tensorflow
+numpy
+librosa
+pretty_midi
+>>>>>>> 71a694dda8187d91360b2f429cb6857990038330
 pydantic
 python-multipart
 
