@@ -3,13 +3,11 @@ name: Shadow Resonance Training & Auto-Commit
 on:
   push:
     branches: [ main ]
-  # Permite ejecutarlo manualmente desde la pestaña Actions si es necesario
   workflow_dispatch:
 
 jobs:
   build-and-train:
     runs-on: ubuntu-latest
-    # CRITICO: Permisos para que el bot pueda subir el modelo al repo
     permissions:
       contents: write
 
@@ -17,7 +15,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 
+        fetch-depth: 0
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
@@ -39,21 +37,17 @@ jobs:
 
     - name: Run Composer Training
       run: |
-        # Añadimos la raíz del proyecto al PATH de Python
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         python scripts/train_composer.py
 
     - name: Commit and Push Model
       run: |
-        # Configuración del bot de Git
         git config --global user.name "Shadow-Resonance-Bot"
         git config --global user.email "shadow-bot@users.noreply.github.com"
-        
-        # Intentamos añadir el archivo generado
-        # Nota: Asegúrate de que tu script use este nombre exacto
-        git add app/models/saved/shadow_composer.keras
-        
-        # Verificamos si hay algo nuevo para subir
+
+        # CAMBIO CLAVE: Usamos -f para saltar el .gitignore solo para este archivo
+        git add -f app/models/saved/shadow_composer.keras
+
         if git diff --staged --quiet; then
           echo "No se detectaron cambios en el modelo. Saltando push."
         else
