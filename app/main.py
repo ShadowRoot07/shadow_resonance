@@ -7,8 +7,19 @@ import uuid
 
 app = FastAPI(title="Shadow Resonance API")
 
-# Ruta absoluta basada en la estructura detectada por el log
-MODEL_PATH = "/home/user/app/app/models/saved/shadow_composer.keras"
+# --- BUSCADOR DE RUTA DINÁMICO ---
+def get_model_path():
+    # Intentamos las dos rutas posibles en el contenedor
+    paths = [
+        "/home/user/app/app/models/saved/shadow_composer.keras",
+        "/home/user/app/models/saved/shadow_composer.keras"
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
+MODEL_PATH = get_model_path()
 BASE_DIR = "/home/user/app"
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "raw", "references")
 GENERATED_DIR = os.path.join(BASE_DIR, "data", "processed")
@@ -21,35 +32,27 @@ composer = None
 @app.on_event("startup")
 async def load_model():
     global composer
-    if os.path.exists(MODEL_PATH):
+    if MODEL_PATH:
         try:
-            # Si el archivo es el real (>10MB), esto funcionará
+            print(f"🚀 Cargando modelo desde: {MODEL_PATH}")
             composer = ShadowComposer(MODEL_PATH)
-            print("✅ Shadow_Resonance: IA Cargada y lista para componer.")
+            print("✅ Shadow_Resonance: IA Cargada con éxito.")
         except Exception as e:
-            print(f"❌ Error al cargar el modelo: {e}")
+            print(f"❌ Error de Keras: {e}")
     else:
-        print(f"⚠️ Archivo no encontrado en {MODEL_PATH}")
+        print("⚠️ Crítico: No se encontró el archivo .keras en ninguna ruta conocida.")
 
 def translate_prompt_to_style(prompt: str) -> str:
     p = prompt.lower()
-    if any(w in p for w in ["game over", "triste", "derrota", "lento", "ambient"]):
-        return "chiptune_ambient"
-    if any(w in p for w in ["acción", "batalla", "rápido", "épico", "nivel"]):
-        return "chiptune_action"
-    if any(w in p for w in ["piano", "relajante", "clásico"]):
-        return "acoustic_piano"
-    if any(w in p for w in ["rock", "metal", "guitarra", "eléctrica"]):
-        return "electric_rock"
+    if any(w in p for w in ["triste", "lento", "ambient"]): return "chiptune_ambient"
+    if any(w in p for w in ["acción", "batalla", "épico"]): return "chiptune_action"
+    if any(w in p for w in ["piano", "relajante"]): return "acoustic_piano"
+    if any(w in p for w in ["rock", "metal"]): return "electric_rock"
     return "chiptune_action"
 
 @app.get("/")
 def home():
-    return {
-        "status": "Online",
-        "model_loaded": composer is not None,
-        "version": "1.0.0"
-    }
+    return {"status": "Online", "model_ready": composer is not None, "path": MODEL_PATH}
 
 @app.post("/upload-reference/")
 async def upload_reference(file: UploadFile = File(...)):
@@ -63,9 +66,8 @@ async def upload_reference(file: UploadFile = File(...)):
 
 @app.post("/generate-from-text/")
 async def generate_from_text(prompt: str, reference_id: str = None):
-    if composer is None:
-        raise HTTPException(status_code=503, detail="IA no lista. El modelo no se cargó correctamente.")
-
+    if not composer:
+        raise HTTPException(status_code=503, detail="IA no cargada.")
     style = translate_prompt_to_style(prompt)
     ref_path = None
     if reference_id:
@@ -73,14 +75,9 @@ async def generate_from_text(prompt: str, reference_id: str = None):
             if f.startswith(reference_id):
                 ref_path = os.path.join(UPLOAD_DIR, f)
                 break
-
     try:
         file_path = composer.generate_music(style, reference_path=ref_path)
-        filename = os.path.basename(file_path)
-        return {
-            "style_detected": style,
-            "download_url": f"/download/{filename}"
-        }
+        return {"style": style, "download_url": f"/download/{os.path.basename(file_path)}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -89,5 +86,5 @@ async def download_file(filename: str):
     file_path = os.path.join(GENERATED_DIR, filename)
     if os.path.exists(file_path):
         return FileResponse(path=file_path, filename=filename, media_type='audio/midi')
-    raise HTTPException(status_code=404, detail="Archivo no encontrado.")
+    raise HTTPException(status_code=404, detail="No encontrado.")
 
