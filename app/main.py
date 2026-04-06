@@ -7,16 +7,19 @@ import uuid
 
 app = FastAPI(title="Shadow Resonance API")
 
-# --- CONFIGURACIÓN DE RUTAS ABSOLUTAS ---
-# Obtenemos la raíz del proyecto (donde está el Dockerfile)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# --- CONFIGURACIÓN DE RUTAS DINÁMICAS ---
+# 'CURRENT_DIR' será la carpeta 'app' donde reside este archivo main.py
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Construimos rutas seguras
-MODEL_PATH = os.path.join(BASE_DIR, "app", "models", "saved", "shadow_composer.keras")
+# El modelo está dentro de la carpeta actual: app/models/saved/...
+MODEL_PATH = os.path.join(CURRENT_DIR, "models", "saved", "shadow_composer.keras")
+
+# Para los datos, subimos un nivel para que queden en la raíz del proyecto (/home/user/app/data)
+BASE_DIR = os.path.dirname(CURRENT_DIR)
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "raw", "references")
 GENERATED_DIR = os.path.join(BASE_DIR, "data", "processed")
 
-# Asegurar que existan los directorios
+# Asegurar que existan los directorios de trabajo
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
@@ -25,16 +28,23 @@ composer = None
 @app.on_event("startup")
 async def load_model():
     global composer
-    print(f"🔍 Buscando modelo en: {MODEL_PATH}")
+    # Este log nos confirmará en la consola de HF la ruta exacta que está usando
+    print(f"🔍 Buscando modelo en ruta anclada: {MODEL_PATH}")
+    
     if os.path.exists(MODEL_PATH):
         try:
-            # Aquí pasamos la ruta absoluta
+            # Inicializamos el compositor con la ruta verificada
             composer = ShadowComposer(MODEL_PATH)
             print("✅ IA Cargada y lista para componer.")
         except Exception as e:
-            print(f"❌ Error al inicializar ShadowComposer: {e}")
+            print(f"❌ Error crítico al inicializar ShadowComposer: {e}")
     else:
-        print(f"⚠️ Modelo no encontrado en: {MODEL_PATH}")
+        print(f"⚠️ MODELO NO ENCONTRADO. Verificando contenido de {os.path.dirname(MODEL_PATH)}:")
+        # Esto nos ayuda a debuggear viendo qué archivos hay realmente ahí
+        try:
+            print(f"Contenido detectado: {os.listdir(os.path.dirname(MODEL_PATH))}")
+        except:
+            print("No se pudo leer la carpeta de modelos.")
 
 def translate_prompt_to_style(prompt: str) -> str:
     p = prompt.lower()
@@ -51,9 +61,10 @@ def translate_prompt_to_style(prompt: str) -> str:
 @app.get("/")
 def home():
     return {
-        "status": "Online", 
+        "status": "Online",
         "project": "Shadow_Resonance",
-        "model_loaded": composer is not None
+        "model_loaded": composer is not None,
+        "path_debug": MODEL_PATH
     }
 
 @app.post("/upload-reference/")
@@ -80,7 +91,6 @@ async def generate_from_text(prompt: str, reference_id: str = None):
                 break
 
     try:
-        # Generar música
         file_path = composer.generate_music(style, reference_path=ref_path)
         filename = os.path.basename(file_path)
         return {
