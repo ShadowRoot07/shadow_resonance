@@ -3,6 +3,8 @@ uvicorn
 tensorflow
 numpy
 mido
+pretty_midi
+scipy
 huggingface_hub
 python-multipart
 
