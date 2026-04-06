@@ -1,11 +1,9 @@
-name: Upload Model to Hugging Face
+name: Sync to Hugging Face
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'app/models/saved/shadow_composer.keras' # Solo se ejecuta si el modelo cambia
 
 jobs:
   deploy:
@@ -13,6 +11,8 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Trae todo el historial para evitar errores de Git
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -23,7 +23,7 @@ jobs:
         run: |
           pip install huggingface_hub
 
-      - name: Ejecutar script de subida
+      - name: Ejecutar sincronización
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python upload_model.py
