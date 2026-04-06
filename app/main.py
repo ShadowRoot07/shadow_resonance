@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Query
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from app.services.composer import ShadowComposer
 import os
@@ -7,24 +7,34 @@ import uuid
 
 app = FastAPI(title="Shadow Resonance API")
 
-# Rutas de archivos
-MODEL_PATH = "app/models/saved/shadow_composer.keras"
-UPLOAD_DIR = "data/raw/references"
-GENERATED_DIR = "data/processed"
+# --- CONFIGURACIÓN DE RUTAS ABSOLUTAS ---
+# Obtenemos la raíz del proyecto (donde está el Dockerfile)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Construimos rutas seguras
+MODEL_PATH = os.path.join(BASE_DIR, "app", "models", "saved", "shadow_composer.keras")
+UPLOAD_DIR = os.path.join(BASE_DIR, "data", "raw", "references")
+GENERATED_DIR = os.path.join(BASE_DIR, "data", "processed")
+
+# Asegurar que existan los directorios
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(GENERATED_DIR, exist_ok=True)
 
 composer = None
 
 @app.on_event("startup")
-def load_model():
+async def load_model():
     global composer
+    print(f"🔍 Buscando modelo en: {MODEL_PATH}")
     if os.path.exists(MODEL_PATH):
-        composer = ShadowComposer(MODEL_PATH)
-        print("✅ IA Cargada y lista para componer.")
+        try:
+            # Aquí pasamos la ruta absoluta
+            composer = ShadowComposer(MODEL_PATH)
+            print("✅ IA Cargada y lista para componer.")
+        except Exception as e:
+            print(f"❌ Error al inicializar ShadowComposer: {e}")
     else:
-        print("⚠️ Modelo no encontrado en app/models/saved/")
+        print(f"⚠️ Modelo no encontrado en: {MODEL_PATH}")
 
 def translate_prompt_to_style(prompt: str) -> str:
     p = prompt.lower()
@@ -40,7 +50,11 @@ def translate_prompt_to_style(prompt: str) -> str:
 
 @app.get("/")
 def home():
-    return {"status": "Online", "project": "Shadow_Resonance"}
+    return {
+        "status": "Online", 
+        "project": "Shadow_Resonance",
+        "model_loaded": composer is not None
+    }
 
 @app.post("/upload-reference/")
 async def upload_reference(file: UploadFile = File(...)):
@@ -55,8 +69,8 @@ async def upload_reference(file: UploadFile = File(...)):
 @app.post("/generate-from-text/")
 async def generate_from_text(prompt: str, reference_id: str = None):
     if composer is None:
-        raise HTTPException(status_code=503, detail="IA no lista.")
-    
+        raise HTTPException(status_code=503, detail="IA no lista. Revisa los logs del servidor.")
+
     style = translate_prompt_to_style(prompt)
     ref_path = None
     if reference_id:
@@ -66,6 +80,7 @@ async def generate_from_text(prompt: str, reference_id: str = None):
                 break
 
     try:
+        # Generar música
         file_path = composer.generate_music(style, reference_path=ref_path)
         filename = os.path.basename(file_path)
         return {
@@ -73,7 +88,7 @@ async def generate_from_text(prompt: str, reference_id: str = None):
             "download_url": f"/download/{filename}"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error en generación: {str(e)}")
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
