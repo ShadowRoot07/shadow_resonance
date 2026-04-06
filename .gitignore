@@ -14,6 +14,7 @@ venv/
 <<<<<<< HEAD
 data/raw/*
 data/processed/*
+data/raw/audio_input/
 *.mid
 *.mp3
 *.wav
