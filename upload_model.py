@@ -14,26 +14,25 @@ api = HfApi()
 print(f"🚀 Forzando subida binaria de {LOCAL_FILE}...")
 
 try:
-    # Subimos el archivo individualmente forzando que NO use LFS del lado de la API
+    # Subida individual del modelo (Sin el argumento erróneo)
     api.upload_file(
         path_or_fileobj=LOCAL_FILE,
         path_in_repo="app/models/saved/shadow_composer.keras",
         repo_id=REPO_ID,
         repo_type="space",
-        token=TOKEN,
-        identical_ok=False # Fuerza la sobreescritura aunque crea que es igual
+        token=TOKEN
     )
     
-    # Subimos el resto del código
+    # Subida del resto de la carpeta
     api.upload_folder(
         folder_path=".",
         repo_id=REPO_ID,
         repo_type="space",
         token=TOKEN,
-        ignore_patterns=[".git*", "app/models/saved/shadow_composer.keras"] # Evitamos subirlo doble
+        ignore_patterns=[".git*", "app/models/saved/shadow_composer.keras"]
     )
-    print("✅ ¡Sincronización total completada!")
+    print("✅ ¡Sincronización total completada con éxito!")
 except Exception as e:
-    print(f"❌ Error: {e}")
+    print(f"❌ Error durante la subida: {e}")
     exit(1)
 
