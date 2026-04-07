@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'data/raw/audio_input/**'
+      - '.github/workflows/**' # Para que se active si cambias este archivo
   workflow_dispatch:
 
 jobs:
@@ -23,21 +24,23 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip' # <--- CACHÉ DE LIBRERÍAS DE PYTHON
 
     - name: Install System Dependencies
+      # Usamos un truco para no actualizar todo el sistema si no es necesario
       run: |
-        sudo apt-get update
+        sudo apt-get update -qq
         sudo apt-get install -y libasound2-dev libjack-dev ffmpeg
 
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
-        # Añadimos basic-pitch para la conversión y mido para manejar los MIDI
         pip install tensorflow numpy pretty_midi librosa pydantic fastapi basic-pitch mido
 
-    - name: Step 1 Convert MP3 to MIDI
+    - name: Step 1 Convert MP3 to MIDI (Smart Skip)
       run: |
         mkdir -p data/raw/chiptune_action data/raw/chiptune_ambient
+        # El script process_audio.py se encargará de ver qué falta
         python scripts/process_audio.py
 
     - name: Step 2 Run Training
@@ -50,17 +53,11 @@ jobs:
         git config --global user.name "Shadow-Resonance-Bot"
         git config --global user.email "shadow-bot@users.noreply.github.com"
 
-        # Añadimos el modelo actualizado
+        # Forzamos la subida de los archivos clave
         git add -f app/models/saved/shadow_composer.keras
-        
-        # Opcional: Añadimos los MIDIs generados para que los tengas en tu repo
-        git add data/raw/chiptune_action/*.mid
-        git add data/raw/chiptune_ambient/*.mid
+        git add -f data/raw/chiptune_action/*.mid
+        git add -f data/raw/chiptune_ambient/*.mid
 
-        if git diff --staged --quiet; then
-          echo "No hay cambios detectados."
-        else
-          git commit -m "🤖 [Automated] Retrained with Undertale & Megaman Zero (MP3 to MIDI)"
-          git push
-        fi
+        # Solo hacemos commit si realmente hubo cambios (evita errores)
+        git diff --staged --quiet || (git commit -m "🤖 [Automated] Sync Model & MIDIs" && git push)
 
