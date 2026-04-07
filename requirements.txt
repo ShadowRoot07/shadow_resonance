@@ -1,15 +1,18 @@
 fastapi
 uvicorn
-# Forzamos la versión exacta del entrenamiento
+# Motor principal
 tensorflow==2.15.0
+# El puente necesario para el modo Legacy que activamos en main.py
+tf_keras
 keras==2.15.0
-# NumPy debe ser menor a 2.0.0 para no romper TensorFlow 2.15
+# Compatibilidad de tipos
 numpy<2.0.0
+# Librerías de Audio y MIDI
 mido
 pretty_midi
 scipy
+librosa
+# Utilidades
 huggingface_hub
 python-multipart
-# Añadimos librosa por si el composer lo usa para procesar audio
-librosa
 
