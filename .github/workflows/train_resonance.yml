@@ -1,12 +1,12 @@
 name: Shadow Resonance - Process & Train
 
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'data/raw/audio_input/**'
-      - '.github/workflows/**' # Para que se active si cambias este archivo
-  workflow_dispatch:
+#on:
+#  push:
+#    branches: [ main ]
+#    paths:
+#      - 'data/raw/audio_input/**'
+#      - '.github/workflows/**' # Para que se active si cambias este archivo
+#  workflow_dispatch:
 
 jobs:
   build-process-train:

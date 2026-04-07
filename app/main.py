@@ -8,16 +8,44 @@ import uuid
 app = FastAPI(title="Shadow Resonance API")
 
 # --- BUSCADOR DE RUTA DINÁMICO ---
+import glob
+
 def get_model_path():
-    # Intentamos las dos rutas posibles en el contenedor
+    # 1. Rutas fijas probables
     paths = [
+        "app/models/saved/shadow_composer.keras",
         "/home/user/app/app/models/saved/shadow_composer.keras",
-        "/home/user/app/models/saved/shadow_composer.keras"
+        "models/saved/shadow_composer.keras"
     ]
     for p in paths:
         if os.path.exists(p):
             return p
+    
+    # 2. Búsqueda recursiva (Si las fijas fallan, buscamos en todo el proyecto)
+    print("🔍 Buscando archivo .keras en todo el directorio...")
+    matches = glob.glob("**/*.keras", recursive=True)
+    if matches:
+        return matches[0]
+        
     return None
+
+MODEL_PATH = get_model_path()
+
+@app.on_event("startup")
+async def load_model():
+    global composer
+    print(f"DEBUG: Directorio actual: {os.getcwd()}")
+    print(f"DEBUG: Contenido: {os.listdir('.')}")
+    
+    if MODEL_PATH:
+        try:
+            print(f"🚀 Intentando cargar desde: {MODEL_PATH}")
+            composer = ShadowComposer(MODEL_PATH)
+            print("✅ Shadow_Resonance: IA Cargada con éxito.")
+        except Exception as e:
+            print(f"❌ Error de Keras al cargar: {e}")
+    else:
+        print("⚠️ CRÍTICO: El archivo .keras NO EXISTE en el contenedor.")
 
 MODEL_PATH = get_model_path()
 BASE_DIR = "/home/user/app"
