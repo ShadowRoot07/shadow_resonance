@@ -19,7 +19,6 @@ data/raw/audio_input/
 
 # Modelo (Ignorar por defecto para evitar push accidentales desde local)
 # El workflow lo subirá usando 'git add -f' o el script de python
-app/models/saved/shadow_composer.keras
 
 # Logs y Sistema
 *.log
