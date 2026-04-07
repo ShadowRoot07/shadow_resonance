@@ -1,12 +1,14 @@
-name: Shadow Resonance Training & Auto-Commit
+name: Shadow Resonance - Process & Train
 
-#on:
-#  push:
-#    branches: [ main ]
-#  workflow_dispatch:
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'data/raw/audio_input/**'
+  workflow_dispatch:
 
 jobs:
-  build-and-train:
+  build-process-train:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,39 +27,40 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libasound2-dev libjack-dev
+        sudo apt-get install -y libasound2-dev libjack-dev ffmpeg
 
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install tensorflow numpy pretty_midi librosa pydantic fastapi
+        # Añadimos basic-pitch para la conversión y mido para manejar los MIDI
+        pip install tensorflow numpy pretty_midi librosa pydantic fastapi basic-pitch mido
 
-    - name: Create Model Directory
-      run: mkdir -p app/models/saved
+    - name: Step 1 Convert MP3 to MIDI
+      run: |
+        mkdir -p data/raw/chiptune_action data/raw/chiptune_ambient
+        python scripts/process_audio.py
 
-    - name: Run Composer Training
+    - name: Step 2 Run Training
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         python scripts/train_composer.py
 
-    - name: Commit and Push Model
+    - name: Step 3 Commit and Push (Model & MIDIs)
       run: |
         git config --global user.name "Shadow-Resonance-Bot"
         git config --global user.email "shadow-bot@users.noreply.github.com"
 
-        # CAMBIO CLAVE: Usamos -f para saltar el .gitignore solo para este archivo
+        # Añadimos el modelo actualizado
         git add -f app/models/saved/shadow_composer.keras
+        
+        # Opcional: Añadimos los MIDIs generados para que los tengas en tu repo
+        git add data/raw/chiptune_action/*.mid
+        git add data/raw/chiptune_ambient/*.mid
 
         if git diff --staged --quiet; then
-          echo "No se detectaron cambios en el modelo. Saltando push."
+          echo "No hay cambios detectados."
         else
-          git commit -m "🤖 [Automated] Update Shadow-Resonance Model weights"
+          git commit -m "🤖 [Automated] Retrained with Undertale & Megaman Zero (MP3 to MIDI)"
           git push
         fi
-
-    - name: Upload Artifact (Backup)
-      uses: actions/upload-artifact@v4
-      with:
-        name: shadow-resonance-model-artifact
-        path: app/models/saved/shadow_composer.keras
 
