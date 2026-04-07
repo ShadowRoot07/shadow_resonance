@@ -1,9 +1,11 @@
 name: Sync to Hugging Face
 
-#on:
-#  push:
-#    branches:
-#      - main
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'data/raw/audio_input/**' # No activar si solo subes MP3 (esperar al entrenamiento)
 
 jobs:
   deploy:
@@ -12,16 +14,16 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Trae todo el historial para evitar errores de Git
+          fetch-depth: 0
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Instalar dependencias
-        run: |
-          pip install huggingface_hub
+        run: pip install huggingface_hub
 
       - name: Ejecutar sincronización
         env:

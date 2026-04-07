@@ -5,27 +5,23 @@ __pycache__/
 venv/
 .env
 
-# Modelos y Pesos (No subir archivos .keras gigantes si no es necesario)
-#*.keras
-*.tflite
-*.h5
-
-# Datos y Audio
-<<<<<<< HEAD
-data/raw/*
-data/processed/*
-*.mid
+# Audio y Datos (Bloqueo de archivos pesados)
 *.mp3
 *.wav
-#=======
-data/raw/*
-data/processed/*
-*.mid
-*.mp3
-*.wav
-#>>>>>>> 71a694dda8187d91360b2f429cb6857990038330
+*.flac
+data/raw/audio_input/
 
-# IDEs
-.vscode/
-.idea/
+# Permitir explícitamente los MIDIs (que son ligeros)
+!data/raw/chiptune_action/*.mid
+!data/raw/chiptune_ambient/*.mid
+!data/raw/acoustic_piano/*.mid
+!data/raw/electric_rock/*.mid
+
+# Modelo (Ignorar por defecto para evitar push accidentales desde local)
+# El workflow lo subirá usando 'git add -f' o el script de python
+app/models/saved/shadow_composer.keras
+
+# Logs y Sistema
+*.log
+.DS_Store
 
